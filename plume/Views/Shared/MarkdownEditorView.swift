@@ -49,26 +49,34 @@ struct MarkdownEditorView: View {
             }
             
             // Editor or Preview
-            if showPreview {
-                ScrollView {
-                    Text(renderMarkdown(text))
-                        .textSelection(.enabled)
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(minHeight: 200)
-                .background(Color.gray.opacity(0.05))
-                .cornerRadius(8)
-            } else {
-                TextEditor(text: $text)
-                    .frame(minHeight: 200)
-                    .font(.body)
-                    .focused($isFocused)
-                    .onChange(of: isFocused) { _, focused in
-                        isEditing = focused
+            Group {
+                if showPreview {
+                    ScrollView {
+                        Text(renderMarkdown(text))
+                            .textSelection(.enabled)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .foregroundStyle(AppColors.Text.primary)
                     }
+                } else {
+                    TextEditor(text: $text)
+                        .frame(minHeight: 200)
+                        .font(.body)
+                        .focused($isFocused)
+                        .onChange(of: isFocused) { _, focused in
+                            isEditing = focused
+                        }
+                }
             }
+            .padding(12)
+            .background(AppColors.Background.elevated)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(AppColors.Border.subtle, lineWidth: 1)
+            )
         }
+        .tint(AppColors.primary)
     }
     
     private func insertMarkdown(_ prefix: String, _ suffix: String) {

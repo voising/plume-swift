@@ -8,32 +8,32 @@ struct ExploreView: View {
     
     @State private var searchText = ""
     
-    var body: some View {
+var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Search Bar
-                HStack {
+                HStack(spacing: 12) {
                     Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppColors.Text.secondary)
                     TextField("Search your memories...", text: $searchText)
                         .textFieldStyle(.plain)
+                        .foregroundStyle(AppColors.Text.primary)
                 }
-                .padding()
-                .background(AppColors.Background.secondaryLight)
-                .cornerRadius(12)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .background(AppColors.Background.secondaryDark)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                 
                 if searchText.isEmpty {
-                    // Statistics Cards
                     HStack(spacing: 16) {
-                        StatCard(title: "Total Entries", value: "\(entries.count)", icon: "doc.text.fill", color: .blue)
-                        StatCard(title: "Current Streak", value: "\(journalService.calculateStreak())", icon: "flame.fill", color: .orange)
-                        StatCard(title: "Words Written", value: "\(journalService.totalWordCount())", icon: "text.quote", color: .purple)
+                        StatCard(title: "Total Entries", value: "\(entries.count)", icon: "doc.text.fill", color: AppColors.EntryType.journal)
+                        StatCard(title: "Current Streak", value: "\(journalService.calculateStreak())", icon: "flame.fill", color: AppColors.EntryType.accomplishment)
+                        StatCard(title: "Words Written", value: "\(journalService.totalWordCount())", icon: "text.justify", color: AppColors.EntryType.memory)
                     }
                     
-                    // Charts
-                    VStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("Activity")
                             .font(.headline)
+                            .foregroundStyle(AppColors.Text.primary)
                         
                         Chart {
                             ForEach(entries) { entry in
@@ -44,69 +44,69 @@ struct ExploreView: View {
                                 .foregroundStyle(AppColors.primary)
                             }
                         }
-                        .frame(height: 200)
+                        .frame(height: 220)
+                        .chartXScale(domain: .automatic(includesZero: false))
                     }
-                    .padding()
-                    .background(AppColors.Background.secondaryLight)
-                    .cornerRadius(12)
+                    .plumeCard()
                     
-                    VStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("Breakdown")
                             .font(.headline)
+                            .foregroundStyle(AppColors.Text.primary)
                         
                         Chart {
                             SectorMark(
                                 angle: .value("Count", entries.filter { !$0.gratitudes.isEmpty }.count),
-                                innerRadius: .ratio(0.6),
-                                angularInset: 1.5
+                                innerRadius: .ratio(0.55),
+                                angularInset: 2
                             )
                             .foregroundStyle(AppColors.EntryType.gratitude)
-                            .annotation(position: .overlay) { Text("Gratitude").font(.caption) }
+                            .cornerRadius(6)
                             
                             SectorMark(
                                 angle: .value("Count", entries.filter { $0.memory != nil }.count),
-                                innerRadius: .ratio(0.6),
-                                angularInset: 1.5
+                                innerRadius: .ratio(0.55),
+                                angularInset: 2
                             )
                             .foregroundStyle(AppColors.EntryType.memory)
-                            .annotation(position: .overlay) { Text("Memory").font(.caption) }
                             
                             SectorMark(
                                 angle: .value("Count", entries.filter { !$0.accomplishments.isEmpty }.count),
-                                innerRadius: .ratio(0.6),
-                                angularInset: 1.5
+                                innerRadius: .ratio(0.55),
+                                angularInset: 2
                             )
                             .foregroundStyle(AppColors.EntryType.accomplishment)
-                            .annotation(position: .overlay) { Text("Wins").font(.caption) }
                         }
-                        .frame(height: 200)
+                        .frame(height: 220)
                     }
-                    .padding()
-                    .background(AppColors.Background.secondaryLight)
-                    .cornerRadius(12)
+                    .plumeCard()
                     
                 } else {
-                    // Search Results
                     LazyVStack(alignment: .leading, spacing: 12) {
                         ForEach(searchResults) { entry in
-                            VStack(alignment: .leading) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text(entry.date, style: .date)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(AppColors.Text.secondary)
                                 
                                 if let memory = entry.memory, memory.localizedCaseInsensitiveContains(searchText) {
                                     Text(memory)
+                                        .foregroundStyle(AppColors.Text.primary)
                                         .lineLimit(2)
                                 }
                                 if let journal = entry.journal, journal.localizedCaseInsensitiveContains(searchText) {
                                     Text(journal)
+                                        .foregroundStyle(AppColors.Text.primary)
                                         .lineLimit(2)
                                 }
                             }
                             .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(AppColors.Background.secondaryLight)
-                            .cornerRadius(8)
+                            .background(AppColors.Background.secondaryDark)
+                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .stroke(AppColors.Border.subtle, lineWidth: 1)
+                            )
                         }
                     }
                 }
@@ -149,8 +149,12 @@ struct StatCard: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(AppColors.Background.secondaryLight)
-        .cornerRadius(12)
+        .background(AppColors.Background.secondaryDark)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(AppColors.Border.subtle, lineWidth: 1)
+        )
     }
 }
 

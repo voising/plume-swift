@@ -17,59 +17,55 @@ struct TodoListView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: "checklist")
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(AppColors.primary)
                 Text("Tasks")
                     .font(.headline)
-                
+                    .foregroundStyle(AppColors.Text.primary)
                 Spacer()
-                
-                Text("\(todosForDate.filter { !$0.completed }.count)")
+                Text("\(todosForDate.filter { !$0.completed }.count) open")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppColors.Text.secondary)
             }
             
-            // Todo Items
             if todosForDate.isEmpty {
                 Text("No tasks for this day")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppColors.Text.secondary)
                     .padding(.vertical, 8)
             } else {
-                ForEach(todosForDate) { todo in
-                    TodoRow(todo: todo, onDelete: {
-                        deleteTodo(todo)
-                    }, onMoveToToday: {
-                        moveToToday(todo)
-                    }, onMoveToTomorrow: {
-                        moveToTomorrow(todo)
-                    })
+                VStack(spacing: 12) {
+                    ForEach(todosForDate) { todo in
+                        TodoRow(todo: todo, onDelete: {
+                            deleteTodo(todo)
+                        }, onMoveToToday: {
+                            moveToToday(todo)
+                        }, onMoveToTomorrow: {
+                            moveToTomorrow(todo)
+                        })
+                    }
                 }
             }
             
-            // Add New Todo
-            HStack {
-                Image(systemName: "plus.circle.fill")
-                    .foregroundStyle(.blue)
-                    .imageScale(.small)
-                
+            HStack(spacing: 10) {
+                Image(systemName: "plus")
+                    .foregroundStyle(AppColors.primary)
                 TextField("Add a task...", text: $newTodoText)
                     .textFieldStyle(.plain)
+                    .foregroundStyle(AppColors.Text.primary)
                     .focused($isInputFocused)
                     .onSubmit {
                         addTodo()
                     }
             }
-            .padding(8)
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(AppColors.Background.elevated)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .padding()
-        .background(AppColors.Background.secondaryLight)
-        .cornerRadius(12)
+        .plumeCard()
     }
     
     private func addTodo() {
@@ -106,51 +102,46 @@ struct TodoRow: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Checkbox
-            Button(action: {
-                withAnimation {
-                    todo.completed.toggle()
-                    todo.updatedAt = Date()
-                }
-            }) {
+            Button(action: toggleCompletion) {
                 Image(systemName: todo.completed ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(todo.completed ? .green : .gray)
-                    .imageScale(.large)
+                    .foregroundStyle(todo.completed ? AppColors.EntryType.memory : AppColors.Border.subtle)
+                    .font(.system(size: 22))
             }
             .buttonStyle(.plain)
             
-            // Title
             Text(todo.title)
-                .strikethrough(todo.completed)
-                .foregroundStyle(todo.completed ? .secondary : .primary)
+                .foregroundStyle(todo.completed ? AppColors.Text.secondary : AppColors.Text.primary)
+                .strikethrough(todo.completed, color: AppColors.Text.secondary)
             
             Spacer()
             
-            // Actions Menu
             Menu {
                 if !Calendar.current.isDateInToday(todo.date) {
                     Button(action: onMoveToToday) {
-                        Label("Move to Today", systemImage: "arrow.right.circle")
+                        Label("Move to Today", systemImage: "arrowshape.turn.up.left")
                     }
                 }
-                
                 Button(action: onMoveToTomorrow) {
-                    Label("Move to Tomorrow", systemImage: "arrow.forward")
+                    Label("Move to Tomorrow", systemImage: "arrow.right.circle")
                 }
-                
                 Divider()
-                
                 Button(role: .destructive, action: onDelete) {
                     Label("Delete", systemImage: "trash")
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
-                    .foregroundStyle(.secondary)
-                    .imageScale(.medium)
+                    .foregroundStyle(AppColors.Text.secondary)
             }
             .menuStyle(.borderlessButton)
         }
         .padding(.vertical, 4)
+    }
+    
+    private func toggleCompletion() {
+        withAnimation {
+            todo.completed.toggle()
+            todo.updatedAt = Date()
+        }
     }
 }
 

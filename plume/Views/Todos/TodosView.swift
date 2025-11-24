@@ -39,99 +39,106 @@ struct TodosView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header with Quick Add
-            VStack(spacing: 16) {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(.blue)
-                    
-                    TextField("Quick add a task...", text: $newTodoText)
-                        .textFieldStyle(.plain)
-                        .font(.body)
-                        .focused($isInputFocused)
-                        .onSubmit {
-                            addTodo()
-                        }
-                }
-                .padding()
-                .background(AppColors.Background.secondaryLight)
-                .cornerRadius(12)
-                
-                // Filter Picker
-                Picker("Filter", selection: $selectedFilter) {
-                    ForEach(TodoFilter.allCases, id: \.self) { filter in
-                        Text(filter.rawValue).tag(filter)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-            .padding()
-            
-            // Todo List
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    // Overdue Section
-                    if !overdueTodos.isEmpty && selectedFilter != .completed {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label("Overdue", systemImage: "exclamationmark.triangle.fill")
-                                .font(.headline)
-                                .foregroundStyle(.red)
-                            
-                            ForEach(overdueTodos) { todo in
-                                TodoRowDetailed(todo: todo, onDelete: {
-                                    deleteTodo(todo)
-                                }, onMoveToToday: {
-                                    moveToToday(todo)
-                                }, onMoveToTomorrow: {
-                                    moveToTomorrow(todo)
-                                })
+        ScrollView {
+            VStack(spacing: 20) {
+                VStack(spacing: 16) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundStyle(AppColors.primary)
+                        TextField("Quick add a task...", text: $newTodoText)
+                            .textFieldStyle(.plain)
+                            .foregroundStyle(AppColors.Text.primary)
+                            .focused($isInputFocused)
+                            .onSubmit {
+                                addTodo()
                             }
-                        }
-                        .padding()
-                        .background(Color.red.opacity(0.1))
-                        .cornerRadius(12)
                     }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 16)
+                    .background(AppColors.Background.elevated)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     
-                    // Filtered Todos
-                    if filteredTodos.isEmpty {
-                        VStack(spacing: 12) {
-                            Image(systemName: "checkmark.circle")
-                                .font(.system(size: 60))
-                                .foregroundStyle(.green.opacity(0.5))
-                            
-                            Text(emptyStateMessage)
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
+                    Picker("Filter", selection: $selectedFilter) {
+                        ForEach(TodoFilter.allCases, id: \.self) { filter in
+                            Text(filter.rawValue).tag(filter)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 60)
-                    } else {
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .plumeCard()
+                
+                if !overdueTodos.isEmpty && selectedFilter != .completed {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Overdue", systemImage: "exclamationmark.triangle.fill")
+                            .font(.headline)
+                            .foregroundStyle(.red)
+                        
+                        ForEach(overdueTodos) { todo in
+                            TodoRowDetailed(todo: todo, onDelete: {
+                                deleteTodo(todo)
+                            }, onMoveToToday: {
+                                moveToToday(todo)
+                            }, onMoveToTomorrow: {
+                                moveToTomorrow(todo)
+                            })
+                        }
+                    }
+                    .padding()
+                    .background(AppColors.Background.elevated.opacity(0.7))
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .stroke(Color.red.opacity(0.4), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 20)
+                }
+                
+                if filteredTodos.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "checkmark.circle")
+                            .font(.system(size: 58))
+                            .foregroundStyle(AppColors.EntryType.memory.opacity(0.6))
+                        Text(emptyStateMessage)
+                            .font(.headline)
+                            .foregroundStyle(AppColors.Text.secondary)
+                    }
+                    .padding(.vertical, 80)
+                    .frame(maxWidth: .infinity)
+                    .background(AppColors.Background.secondaryDark)
+                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                    .padding(.horizontal, 20)
+                } else {
+                    VStack(spacing: 16) {
                         ForEach(groupedTodos.keys.sorted(), id: \.self) { date in
                             if let todos = groupedTodos[date] {
-                                VStack(alignment: .leading, spacing: 8) {
+                                VStack(alignment: .leading, spacing: 12) {
                                     Text(formatDate(date))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(AppColors.Text.secondary)
                                         .textCase(.uppercase)
                                     
-                                    ForEach(todos) { todo in
-                                        TodoRowDetailed(todo: todo, onDelete: {
-                                            deleteTodo(todo)
-                                        }, onMoveToToday: {
-                                            moveToToday(todo)
-                                        }, onMoveToTomorrow: {
-                                            moveToTomorrow(todo)
-                                        })
+                                    VStack(spacing: 12) {
+                                        ForEach(todos) { todo in
+                                            TodoRowDetailed(todo: todo, onDelete: {
+                                                deleteTodo(todo)
+                                            }, onMoveToToday: {
+                                                moveToToday(todo)
+                                            }, onMoveToTomorrow: {
+                                                moveToTomorrow(todo)
+                                            })
+                                        }
                                     }
                                 }
+                                .plumeCard()
                             }
                         }
                     }
+                    .padding(.horizontal, 20)
                 }
-                .padding()
             }
+            .padding(.vertical, 20)
         }
+        .background(AppColors.Background.mainLight)
         .navigationTitle("Tasks")
     }
     
@@ -206,44 +213,34 @@ struct TodoRowDetailed: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Checkbox
-            Button(action: {
-                withAnimation {
-                    todo.completed.toggle()
-                    todo.updatedAt = Date()
-                }
-            }) {
+            Button(action: toggle) {
                 Image(systemName: todo.completed ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(todo.completed ? .green : .gray)
-                    .font(.title3)
+                    .foregroundStyle(todo.completed ? AppColors.EntryType.memory : AppColors.Border.subtle)
+                    .font(.system(size: 22))
             }
             .buttonStyle(.plain)
             
-            // Title
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(todo.title)
-                    .strikethrough(todo.completed)
-                    .foregroundStyle(todo.completed ? .secondary : .primary)
+                    .foregroundStyle(todo.completed ? AppColors.Text.secondary : AppColors.Text.primary)
+                    .strikethrough(todo.completed, color: AppColors.Text.secondary)
                 
-                if todo.completed {
-                    Text("Completed")
-                        .font(.caption2)
-                        .foregroundStyle(.green)
-                }
+                Text(statusText)
+                    .font(.caption2)
+                    .foregroundStyle(AppColors.Text.secondary)
             }
             
             Spacer()
             
-            // Actions Menu
             Menu {
                 if !Calendar.current.isDateInToday(todo.date) {
                     Button(action: onMoveToToday) {
-                        Label("Move to Today", systemImage: "arrow.right.circle")
+                        Label("Move to Today", systemImage: "arrowshape.turn.up.left")
                     }
                 }
                 
                 Button(action: onMoveToTomorrow) {
-                    Label("Move to Tomorrow", systemImage: "arrow.forward")
+                    Label("Move to Tomorrow", systemImage: "arrow.right.circle")
                 }
                 
                 Divider()
@@ -253,13 +250,36 @@ struct TodoRowDetailed: View {
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppColors.Text.secondary)
             }
             .menuStyle(.borderlessButton)
         }
         .padding()
-        .background(AppColors.Background.secondaryLight)
-        .cornerRadius(8)
+        .background(AppColors.Background.secondaryDark)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(AppColors.Border.subtle, lineWidth: 1)
+        )
+    }
+    
+    private var statusText: String {
+        if todo.completed {
+            return "Completed"
+        } else if Calendar.current.isDateInToday(todo.date) {
+            return "Due Today"
+        } else if todo.date < Date() {
+            return "Overdue"
+        } else {
+            return "Upcoming"
+        }
+    }
+    
+    private func toggle() {
+        withAnimation {
+            todo.completed.toggle()
+            todo.updatedAt = Date()
+        }
     }
 }
 

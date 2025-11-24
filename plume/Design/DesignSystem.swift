@@ -1,20 +1,55 @@
 import SwiftUI
 
 struct AppColors {
-    static let primary = Color.blue
+    static let primary = Color(hex: "F2C550")
+    static let accent = Color(hex: "F4B740")
     
     struct Background {
-        static let mainLight = Color.white
-        static let mainDark = Color(hex: "111827")
-        static let secondaryLight = Color(hex: "F3F4F6")
-        static let secondaryDark = Color(hex: "1F2937")
+        static let mainLight = Color(hex: "0B0B0F")
+        static let mainDark = Color(hex: "050506")
+        static let secondaryLight = Color(hex: "14141A")
+        static let secondaryDark = Color(hex: "1C1C24")
+        static let elevated = Color(hex: "1F1F29")
+    }
+    
+    struct Text {
+        static let primary = Color(hex: "F5F6F9")
+        static let secondary = Color(hex: "A1A1B4")
+        static let muted = Color(hex: "6B6B7B")
+    }
+    
+    struct Border {
+        static let subtle = Color(hex: "2B2B35")
+        static let strong = Color(hex: "3C3C46")
     }
     
     struct EntryType {
-        static let gratitude = Color.orange
-        static let memory = Color.green
-        static let accomplishment = Color.red
-        static let journal = Color.purple
+        static let gratitude = Color(hex: "F4C15D")
+        static let memory = Color(hex: "3CDAB6")
+        static let accomplishment = Color(hex: "F87171")
+        static let journal = Color(hex: "A78BFA")
+    }
+}
+
+struct CardBackgroundModifier: ViewModifier {
+    var padding: CGFloat
+    
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(AppColors.Background.secondaryDark)
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(AppColors.Border.subtle, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: Color.black.opacity(0.35), radius: 25, x: 0, y: 18)
+    }
+}
+
+extension View {
+    func plumeCard(padding: CGFloat = 20) -> some View {
+        modifier(CardBackgroundModifier(padding: padding))
     }
 }
 

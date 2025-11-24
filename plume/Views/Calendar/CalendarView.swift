@@ -3,132 +3,118 @@ import SwiftData
 
 struct CalendarView: View {
     @State private var selectedDate: Date = Date()
-    @State private var columnVisibility: NavigationSplitViewVisibility = .all
-
-    var body: some View {
-        #if os(macOS)
-        HSplitView {
-            CalendarGridView(selectedDate: $selectedDate)
-                .frame(minWidth: 400)
-                .layoutPriority(1)
-            
-            EntryDetailView(date: selectedDate)
-                .frame(minWidth: 300)
-        }
-        #else
-        NavigationStack {
-            CalendarGridView(selectedDate: $selectedDate)
-                .navigationDestination(isPresented: Binding(
-                    get: { true }, // This is tricky, we want to navigate on tap. 
-                    // Better to use NavigationLink in the grid or .navigationDestination(for:)
-                    set: { _ in }
-                )) {
-                    EntryDetailView(date: selectedDate)
-                }
-        }
-        #endif
-    }
-}
-
-struct CalendarGridView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var entries: [Entry]
-    @Binding var selectedDate: Date
     @State private var currentMonth: Date = Date()
-    @State private var selectedFilter: EntryFilter = .all
-    
-    enum EntryFilter: String, CaseIterable {
-        case all = "All"
-        case gratitude = "Gratitude"
-        case memory = "Memory"
-        case accomplishment = "Accomplishment"
-    }
-    
-    // Grid configuration
-    private let columns = Array(repeating: GridItem(.flexible()), count: 7)
-    private let daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    @State private var showEntryDetail = false
+    @State private var showSettings = false
+    @State private var showSearch = false
     
     var body: some View {
-        VStack {
-            // Header
-            HStack {
-                Button(action: previousMonth) {
-                    Image(systemName: "chevron.left")
-                }
-                
-                Text(currentMonth, format: .dateTime.month(.wide).year())
-                    .font(.title2)
-                    .bold()
-                
-                Button(action: nextMonth) {
-                    Image(systemName: "chevron.right")
-                }
-                
-                Spacer()
-                
-                // Filter Picker
-                Picker("Filter", selection: $selectedFilter) {
-                    ForEach(EntryFilter.allCases, id: \.self) { filter in
-                        Text(filter.rawValue).tag(filter)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 300)
-                
-                Spacer()
-                
-                Button("Today") {
-                    currentMonth = Date()
-                    selectedDate = Date()
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 24) {
+                header
+                monthHeader
+                CalendarGrid(currentMonth: $currentMonth, selectedDate: $selectedDate) { date in
+                    selectedDate = date
+                    showEntryDetail = true
                 }
             }
-            .padding()
-            
-            // Days of week
-            HStack {
-                ForEach(daysOfWeek, id: \.self) { day in
-                    Text(day)
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .frame(maxWidth: .infinity)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            
-            // Calendar Grid
-            LazyVGrid(columns: columns, spacing: 15) {
-                ForEach(daysInMonth(), id: \.self) { date in
-                    if let date = date {
-                        // For iOS, we want navigation
-                        #if os(iOS)
-                        NavigationLink(value: date) {
-                            DayCell(date: date, isSelected: isSelected(date), entry: entry(for: date), filter: selectedFilter)
-                        }
-                        .buttonStyle(.plain)
-                        #else
-                        DayCell(date: date, isSelected: isSelected(date), entry: entry(for: date), filter: selectedFilter)
-                            .onTapGesture {
-                                selectedDate = date
+            .padding(.horizontal, 20)
+            .padding(.bottom, 40)
+        }
+        .background(AppColors.Background.mainLight)
+        .navigationDestination(isPresented: $showEntryDetail) {
+            EntryDetailView(date: selectedDate)
+                .padding(.horizontal, 20)
+                .background(AppColors.Background.mainLight)
+        }
+        .sheet(isPresented: $showSearch) {
+            NavigationStack {
+                ExploreView()
+                    .navigationTitle("Search")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close") {
+                                showSearch = false
                             }
-                        #endif
-                    } else {
-                        Color.clear
-                            .frame(height: 40)
+                        }
                     }
+            }
+            .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showSettings) {
+            NavigationStack {
+                SettingsView()
+                    .navigationTitle("Settings")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                showSettings = false
+                            }
+                        }
+                    }
+            }
+            .presentationDetents([.medium, .large])
+        }
+    }
+    
+    private var header: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Plume")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(AppColors.Text.primary)
+                
+                Text("Reflect, grow, and track your journey")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.Text.secondary)
+            }
+            Spacer()
+            HStack(spacing: 12) {
+                HeaderActionButton(icon: "magnifyingglass") {
+                    showSearch = true
+                }
+                HeaderActionButton(icon: "gearshape.fill") {
+                    showSettings = true
                 }
             }
-            .padding()
-            #if os(iOS)
-            .navigationDestination(for: Date.self) { date in
-                EntryDetailView(date: date)
+        }
+        .padding(.top, 8)
+    }
+    
+    private var monthHeader: some View {
+        HStack {
+            Button(action: previousMonth) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColors.Text.primary)
+                    .padding(10)
+                    .background(AppColors.Background.secondaryDark)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            #endif
             
             Spacer()
+            
+            VStack(spacing: 4) {
+                Text(currentMonth, format: .dateTime.month(.wide).year())
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(AppColors.Text.primary)
+                Text("Tap any day to open your entry")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.Text.secondary)
+            }
+            
+            Spacer()
+            
+            Button(action: nextMonth) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColors.Text.primary)
+                    .padding(10)
+                    .background(AppColors.Background.secondaryDark)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
         }
     }
-    
-    // MARK: - Helpers
     
     private func previousMonth() {
         currentMonth = Calendar.current.date(byAdding: .month, value: -1, to: currentMonth) ?? currentMonth
@@ -137,101 +123,152 @@ struct CalendarGridView: View {
     private func nextMonth() {
         currentMonth = Calendar.current.date(byAdding: .month, value: 1, to: currentMonth) ?? currentMonth
     }
+}
+
+private struct CalendarGrid: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var entries: [Entry]
     
-    private func daysInMonth() -> [Date?] {
+    @Binding var currentMonth: Date
+    @Binding var selectedDate: Date
+    var onSelect: (Date) -> Void
+    
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 7)
+    private let daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            HStack {
+                ForEach(daysOfWeek, id: \.self) { day in
+                    Text(day)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(AppColors.Text.secondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(daysInMonth()) { day in
+                    if let actualDate = day.date {
+                        DayCellView(
+                            date: actualDate,
+                            isSelected: Calendar.current.isDate(actualDate, inSameDayAs: selectedDate),
+                            isToday: Calendar.current.isDateInToday(actualDate),
+                            isCurrentMonth: day.isWithinMonth,
+                            entry: entry(for: actualDate)
+                        )
+                        .onTapGesture {
+                            selectedDate = actualDate
+                            onSelect(actualDate)
+                        }
+                    } else {
+                        Color.clear
+                            .frame(height: 64)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func entry(for date: Date) -> Entry? {
+        entries.first { Calendar.current.isDate($0.date, inSameDayAs: date) }
+    }
+    
+    private func daysInMonth() -> [CalendarDay] {
         let calendar = Calendar.current
         guard let range = calendar.range(of: .day, in: .month, for: currentMonth),
-              let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth)) else {
+              let firstDay = calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth)) else {
             return []
         }
         
-        let firstWeekday = calendar.component(.weekday, from: firstDayOfMonth)
-        let offset = firstWeekday - 1
+        let firstWeekday = calendar.component(.weekday, from: firstDay)
+        var days: [CalendarDay] = []
         
-        var days: [Date?] = Array(repeating: nil, count: offset)
+        for _ in 0..<(firstWeekday - 1) {
+            days.append(CalendarDay(date: nil, isWithinMonth: false))
+        }
         
         for day in range {
-            if let date = calendar.date(byAdding: .day, value: day - 1, to: firstDayOfMonth) {
-                days.append(date)
+            if let date = calendar.date(byAdding: .day, value: day - 1, to: firstDay) {
+                days.append(CalendarDay(date: date, isWithinMonth: true))
             }
         }
         
         return days
     }
-    
-    private func isSelected(_ date: Date) -> Bool {
-        return Calendar.current.isDate(date, inSameDayAs: selectedDate)
-    }
-    
-    private func entry(for date: Date) -> Entry? {
-        return entries.first { Calendar.current.isDate($0.date, inSameDayAs: date) }
-    }
 }
 
-struct DayCell: View {
+private struct CalendarDay: Identifiable {
+    let id = UUID()
+    let date: Date?
+    let isWithinMonth: Bool
+}
+
+private struct DayCellView: View {
     let date: Date
     let isSelected: Bool
+    let isToday: Bool
+    let isCurrentMonth: Bool
     let entry: Entry?
-    let filter: CalendarGridView.EntryFilter
-    
-    var matchesFilter: Bool {
-        guard let entry = entry else { return false }
-        
-        switch filter {
-        case .all:
-            return true
-        case .gratitude:
-            return !entry.gratitudes.isEmpty
-        case .memory:
-            return entry.memory != nil
-        case .accomplishment:
-            return !entry.accomplishments.isEmpty
-        }
-    }
-    
+
     var body: some View {
-        VStack(spacing: 4) {
-            Text("\(Calendar.current.component(.day, from: date))")
-                .font(.body)
-                .fontWeight(isToday ? .bold : .regular)
-                .foregroundStyle(isToday ? AppColors.primary : .primary)
-                .frame(width: 30, height: 30)
-                .background(isSelected ? AppColors.primary.opacity(0.2) : Color.clear)
-                .clipShape(Circle())
-                .overlay(
-                    Circle()
-                        .stroke(AppColors.primary, lineWidth: isSelected ? 2 : 0)
-                )
-            
-            // Indicators
-            HStack(spacing: 2) {
-                if let entry = entry {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(dayString)
+                .font(.body.weight(isToday ? .semibold : .regular))
+                .foregroundStyle(isToday ? .black.opacity(0.85) : AppColors.Text.primary)
+
+            Spacer()
+
+            HStack(spacing: 4) {
+                if let entry, !isToday {
                     if !entry.gratitudes.isEmpty {
-                        Circle().fill(AppColors.EntryType.gratitude).frame(width: 4, height: 4)
+                        dot(color: AppColors.EntryType.gratitude)
                     }
                     if entry.memory != nil {
-                        Circle().fill(AppColors.EntryType.memory).frame(width: 4, height: 4)
+                        dot(color: AppColors.EntryType.memory)
                     }
                     if !entry.accomplishments.isEmpty {
-                        Circle().fill(AppColors.EntryType.accomplishment).frame(width: 4, height: 4)
+                        dot(color: AppColors.EntryType.accomplishment)
                     }
                     if entry.journal != nil {
-                        Circle().fill(AppColors.EntryType.journal).frame(width: 4, height: 4)
+                        dot(color: AppColors.EntryType.journal)
                     }
                 }
             }
         }
-        .frame(height: 45)
-        .opacity(filter == .all || matchesFilter ? 1.0 : 0.3)
+        .padding(12)
+        .frame(height: 64, alignment: .topLeading)
+        .background(isToday ? AppColors.primary : AppColors.Background.secondaryDark)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(hasEntry && !isToday ? AppColors.primary : AppColors.Border.subtle, lineWidth: hasEntry && !isToday ? 2 : 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .opacity(isCurrentMonth ? 1.0 : 0.35)
+    }
+
+    private var hasEntry: Bool {
+        guard let entry else { return false }
+        return !entry.gratitudes.isEmpty || entry.memory != nil || !entry.accomplishments.isEmpty || entry.journal != nil
     }
     
-    private var isToday: Bool {
-        Calendar.current.isDateInToday(date)
+    private func dot(color: Color) -> some View {
+        Circle()
+            .fill(color)
+            .frame(width: 6, height: 6)
+    }
+    
+    private var dayString: String {
+        let day = Calendar.current.component(.day, from: date)
+        return "\(day)"
     }
 }
 
+
 #Preview {
-    CalendarView()
-        .modelContainer(for: [Entry.self, Todo.self], inMemory: true)
-        .environmentObject(JournalService(modelContext: try! ModelContainer(for: Entry.self, Todo.self).mainContext))
+    NavigationStack {
+        CalendarView()
+            .modelContainer(for: [Entry.self, Todo.self], inMemory: true)
+            .environmentObject(JournalService(modelContext: try! ModelContainer(for: Entry.self, Todo.self).mainContext))
+    }
 }

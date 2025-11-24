@@ -67,6 +67,8 @@ struct SettingsView: View {
                     .font(.caption)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(AppColors.Background.mainLight)
         .formStyle(.grouped)
     }
 }
