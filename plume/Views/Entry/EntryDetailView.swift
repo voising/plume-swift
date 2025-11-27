@@ -164,15 +164,35 @@ struct EntryDetailView: View {
     }
     
     private var gratitudeCard: some View {
-        SectionCard(
-            title: "Gratitude",
-            icon: "heart.fill",
-            color: AppColors.EntryType.gratitude,
-            items: entry?.gratitudes ?? [],
-            placeholder: "Add gratitude...",
-            inputText: $newGratitude,
-            onSubmit: addGratitude
-        )
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "Gratitude", icon: "heart.fill", color: AppColors.EntryType.gratitude)
+            
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: Binding(
+                    get: { entry?.gratitudes.joined(separator: "\n") ?? "" },
+                    set: { newValue in
+                        entry?.gratitudes = newValue.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                    }
+                ))
+                .frame(minHeight: 100)
+                .scrollContentBackground(.hidden)
+                .padding(12)
+                .background(AppColors.Background.elevated)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(AppColors.Border.subtle, lineWidth: 1)
+                )
+                
+                if (entry?.gratitudes ?? []).isEmpty {
+                    Text("What are you grateful for today?\nOne per line...")
+                        .foregroundStyle(AppColors.Text.secondary)
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 18)
+                }
+            }
+        }
+        .plumeCard()
     }
     
     private var memoryCard: some View {
@@ -206,15 +226,35 @@ struct EntryDetailView: View {
     }
     
     private var accomplishmentsCard: some View {
-        SectionCard(
-            title: "Accomplishments",
-            icon: "trophy.fill",
-            color: AppColors.EntryType.accomplishment,
-            items: entry?.accomplishments ?? [],
-            placeholder: "Add accomplishment...",
-            inputText: $newAccomplishment,
-            onSubmit: addAccomplishment
-        )
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "Accomplishments", icon: "trophy.fill", color: AppColors.EntryType.accomplishment)
+            
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: Binding(
+                    get: { entry?.accomplishments.joined(separator: "\n") ?? "" },
+                    set: { newValue in
+                        entry?.accomplishments = newValue.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                    }
+                ))
+                .frame(minHeight: 100)
+                .scrollContentBackground(.hidden)
+                .padding(12)
+                .background(AppColors.Background.elevated)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(AppColors.Border.subtle, lineWidth: 1)
+                )
+                
+                if (entry?.accomplishments ?? []).isEmpty {
+                    Text("What did you accomplish today?\nOne per line...")
+                        .foregroundStyle(AppColors.Text.secondary)
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 18)
+                }
+            }
+        }
+        .plumeCard()
     }
     
     private var wordCount: Int {

@@ -7,11 +7,20 @@ struct ZenModeView: View {
     
     @State private var fontSize: Double = 18
     @State private var selectedTheme: Int = 1
+    @State private var selectedFontColor: Int = 0
     
     private let themes: [Color] = [
         Color(hex: "0E0E10"),
         Color(hex: "15151C"),
         Color(hex: "1F1C17")
+    ]
+    
+    private let fontColors: [Color] = [
+        Color(hex: "F9FAFB"),  // White/Light gray
+        Color(hex: "FCD34D"),  // Warm yellow
+        Color(hex: "A78BFA"),  // Purple
+        Color(hex: "60A5FA"),  // Blue
+        Color(hex: "34D399")   // Green
     ]
     
     var body: some View {
@@ -43,7 +52,7 @@ struct ZenModeView: View {
                 
                 TextEditor(text: $text)
                     .font(.system(size: fontSize, weight: .regular, design: .serif))
-                    .foregroundColor(AppColors.Text.primary)
+                    .foregroundColor(fontColors[selectedFontColor])
                     .scrollContentBackground(.hidden)
                     .padding(.horizontal, 24)
                     .padding(.top, 30)
@@ -75,6 +84,21 @@ struct ZenModeView: View {
                     }
                 }
                 
+                HStack(spacing: 10) {
+                    ForEach(Array(fontColors.enumerated()), id: \.offset) { index, color in
+                        Circle()
+                            .fill(color)
+                            .frame(width: 26, height: 26)
+                            .overlay(
+                                Circle()
+                                    .stroke(AppColors.primary, lineWidth: selectedFontColor == index ? 2 : 0)
+                            )
+                            .onTapGesture {
+                                selectedFontColor = index
+                            }
+                    }
+                }
+                
                 Spacer()
                 
                 pillButton(title: "\(wordCount) words")
@@ -85,7 +109,7 @@ struct ZenModeView: View {
             .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .fill(AppColors.Background.secondaryDark.opacity(0.95))
+                    .fill(.clear)
             )
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
