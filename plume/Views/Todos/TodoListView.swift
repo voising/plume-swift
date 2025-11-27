@@ -141,6 +141,14 @@ struct TodoRow: View {
         withAnimation {
             todo.completed.toggle()
             todo.updatedAt = Date()
+            
+            #if os(iOS)
+            if todo.completed {
+                HapticManager.shared.notification(type: .success)
+            } else {
+                HapticManager.shared.selection()
+            }
+            #endif
         }
     }
 }

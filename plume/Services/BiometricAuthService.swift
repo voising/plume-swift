@@ -95,6 +95,8 @@ class BiometricAuthService: ObservableObject {
             return "Touch ID"
         case .opticID:
             return "Optic ID"
+        case .none:
+            return "None"
         @unknown default:
             return "Biometric"
         }

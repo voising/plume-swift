@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MarkdownEditorView: View {
     @Binding var text: String
+    var placeholder: String = ""
     @State private var isEditing = false
     @State private var showPreview = false
     @FocusState private var isFocused: Bool

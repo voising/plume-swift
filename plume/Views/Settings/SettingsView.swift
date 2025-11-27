@@ -3,7 +3,12 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var aiService: AIService
     @EnvironmentObject private var authService: BiometricAuthService
+    @EnvironmentObject private var dataService: DataService
     @AppStorage("isDarkMode") private var isDarkMode = false
+    
+    @State private var showShareSheet = false
+    @State private var exportURL: URL?
+    @State private var showDeleteConfirmation = false
     
     var body: some View {
         Form {
@@ -53,12 +58,28 @@ struct SettingsView: View {
             
             Section("Data") {
                 Button("Export Data (JSON)") {
-                    // Placeholder for export
+                    if let url = dataService.exportData() {
+                        exportURL = url
+                        showShareSheet = true
+                    }
                 }
                 
                 Button("Delete All Data", role: .destructive) {
-                    // Placeholder for delete
+                    showDeleteConfirmation = true
                 }
+            }
+            .sheet(isPresented: $showShareSheet) {
+                if let url = exportURL {
+                    ShareSheet(activityItems: [url])
+                }
+            }
+            .alert("Delete All Data?", isPresented: $showDeleteConfirmation) {
+                Button("Cancel", role: .cancel) { }
+                Button("Delete", role: .destructive) {
+                    dataService.deleteAllData()
+                }
+            } message: {
+                Text("This action cannot be undone. All your entries and todos will be permanently deleted.")
             }
             
             Section("About") {
@@ -76,4 +97,18 @@ struct SettingsView: View {
 #Preview {
     SettingsView()
         .environmentObject(AIService())
+        .environmentObject(BiometricAuthService())
+        // Mock DataService for preview if needed, or just rely on environment injection in app
+}
+
+struct ShareSheet: UIViewControllerRepresentable {
+    var activityItems: [Any]
+    var applicationActivities: [UIActivity]? = nil
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: applicationActivities)
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

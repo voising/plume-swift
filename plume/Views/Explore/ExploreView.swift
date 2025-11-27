@@ -30,24 +30,7 @@ var body: some View {
                         StatCard(title: "Words Written", value: "\(journalService.totalWordCount())", icon: "text.justify", color: AppColors.EntryType.memory)
                     }
                     
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Activity")
-                            .font(.headline)
-                            .foregroundStyle(AppColors.Text.primary)
-                        
-                        Chart {
-                            ForEach(entries) { entry in
-                                BarMark(
-                                    x: .value("Date", entry.date, unit: .day),
-                                    y: .value("Words", entry.wordCount)
-                                )
-                                .foregroundStyle(AppColors.primary)
-                            }
-                        }
-                        .frame(height: 220)
-                        .chartXScale(domain: .automatic(includesZero: false))
-                    }
-                    .plumeCard()
+                    HeatmapView(entries: entries)
                     
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Breakdown")

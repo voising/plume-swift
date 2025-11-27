@@ -101,28 +101,13 @@ struct EntryDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             SectionHeader(title: "Journal", icon: "book.fill", color: AppColors.EntryType.journal)
             
-            ZStack(alignment: .topLeading) {
-                TextEditor(text: Binding(
+            MarkdownEditorView(
+                text: Binding(
                     get: { entry?.journal ?? "" },
                     set: { entry?.journal = $0 }
-                ))
-                .frame(minHeight: 200)
-                .scrollContentBackground(.hidden)
-                .padding(12)
-                .background(AppColors.Background.elevated)
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(AppColors.Border.subtle, lineWidth: 1)
-                )
-                
-                if (entry?.journal ?? "").isEmpty {
-                    Text("Write about your day, thoughts, feelings...")
-                        .foregroundStyle(AppColors.Text.secondary)
-                        .padding(.horizontal, 22)
-                        .padding(.vertical, 18)
-                }
-            }
+                ),
+                placeholder: "Write about your day, thoughts, feelings..."
+            )
             
             HStack {
                 Menu {
@@ -254,12 +239,18 @@ struct EntryDetailView: View {
         guard !newGratitude.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         entry?.gratitudes.append(newGratitude)
         newGratitude = ""
+        #if os(iOS)
+        HapticManager.shared.notification(type: .success)
+        #endif
     }
     
     private func addAccomplishment() {
         guard !newAccomplishment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         entry?.accomplishments.append(newAccomplishment)
         newAccomplishment = ""
+        #if os(iOS)
+        HapticManager.shared.notification(type: .success)
+        #endif
     }
     
     private func improveText() {

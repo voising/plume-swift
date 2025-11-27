@@ -255,6 +255,7 @@ private struct FilterButton: View {
 private struct CalendarGridView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var entries: [Entry]
+    @Query private var todos: [Todo]
 
     @Binding var currentMonth: Date
     @Binding var selectedDate: Date
@@ -290,6 +291,7 @@ private struct CalendarGridView: View {
                             isToday: Calendar.current.isDateInToday(actualDate),
                             isCurrentMonth: day.isWithinMonth,
                             entry: entry(for: actualDate),
+                            hasTodos: hasTodos(for: actualDate),
                             filter: filter
                         )
                         .onTapGesture {
@@ -307,6 +309,10 @@ private struct CalendarGridView: View {
 
     private func entry(for date: Date) -> Entry? {
         entries.first { Calendar.current.isDate($0.date, inSameDayAs: date) }
+    }
+    
+    private func hasTodos(for date: Date) -> Bool {
+        todos.contains { Calendar.current.isDate($0.date, inSameDayAs: date) && !$0.completed }
     }
 
     private func daysInMonth() -> [CalendarDay] {
@@ -347,6 +353,7 @@ private struct DayCellView: View {
     let isToday: Bool
     let isCurrentMonth: Bool
     let entry: Entry?
+    let hasTodos: Bool
     let filter: CalendarView.CalendarFilter
 
     private var isIPad: Bool {
@@ -383,6 +390,12 @@ private struct DayCellView: View {
                                 .fill(AppColors.EntryType.accomplishment)
                                 .frame(width: isIPad ? 6 : 4, height: isIPad ? 6 : 4)
                         }
+                    }
+                    
+                    if hasTodos {
+                        Circle()
+                            .fill(AppColors.Text.secondary)
+                            .frame(width: isIPad ? 6 : 4, height: isIPad ? 6 : 4)
                     }
                 }
                 .padding(.bottom, isIPad ? 4 : 2)

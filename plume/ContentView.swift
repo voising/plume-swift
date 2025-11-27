@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var selectedTab: Tab = .today
     @State private var showSettings = false
     @State private var showSearch = false
+    @State private var showCommandPalette = false
     @State private var presentOnboarding = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
@@ -23,11 +24,25 @@ struct ContentView: View {
     }
 
     var body: some View {
-        #if os(macOS)
-        macOSView
-        #else
-        iOSView
-        #endif
+        ZStack {
+            #if os(macOS)
+            macOSView
+            #else
+            iOSView
+            #endif
+            
+            if showCommandPalette {
+                CommandPaletteView(isPresented: $showCommandPalette)
+                    .zIndex(100)
+            }
+        }
+        .background(
+            Button("Command Palette") {
+                showCommandPalette.toggle()
+            }
+            .keyboardShortcut("k", modifiers: .command)
+            .opacity(0)
+        )
     }
 
     @ViewBuilder
