@@ -1,33 +1,45 @@
 import SwiftUI
 
 struct AppColors {
-    static let primary = Color(hex: "F2C550")
-    static let accent = Color(hex: "F4B740")
-    
+    // Primary colors - matching React Native dark theme
+    static let primary = Color(hex: "D4AF37")        // Brighter gold for dark mode
+    static let primaryLight = Color(hex: "F4E4BC")   // Very light gold
+    static let accent = Color(hex: "8FBC8F")         // Lighter sage for dark mode
+
     struct Background {
-        static let mainLight = Color(hex: "0B0B0F")
-        static let mainDark = Color(hex: "050506")
-        static let secondaryLight = Color(hex: "14141A")
-        static let secondaryDark = Color(hex: "1C1C24")
-        static let elevated = Color(hex: "1F1F29")
+        // Warm off-black backgrounds matching React Native
+        static let mainLight = Color(hex: "1A1A1A")       // Warm off-black
+        static let mainDark = Color(hex: "050506")        // Keep for special cases
+        static let secondaryLight = Color(hex: "242424")  // Slightly lighter surface
+        static let secondaryDark = Color(hex: "2A2A2A")   // Card background
+        static let elevated = Color(hex: "2A2A2A")        // Card background
     }
-    
+
     struct Text {
-        static let primary = Color(hex: "F5F6F9")
-        static let secondary = Color(hex: "A1A1B4")
-        static let muted = Color(hex: "6B6B7B")
+        // Cream tones matching React Native
+        static let primary = Color(hex: "F5F5DC")    // Cream text
+        static let secondary = Color(hex: "D3D3D3")  // Light gray
+        static let muted = Color(hex: "A0A0A0")      // Muted gray
     }
-    
+
     struct Border {
-        static let subtle = Color(hex: "2B2B35")
-        static let strong = Color(hex: "3C3C46")
+        // Dark gray borders matching React Native
+        static let subtle = Color(hex: "404040")     // Dark gray
+        static let strong = Color(hex: "353535")     // Darker gray
     }
-    
+
     struct EntryType {
-        static let gratitude = Color(hex: "F4C15D")
-        static let memory = Color(hex: "3CDAB6")
-        static let accomplishment = Color(hex: "F87171")
-        static let journal = Color(hex: "A78BFA")
+        // Enhanced pill colors for better visibility in dark mode
+        static let gratitude = Color(hex: "FFD700")  // Bright gold for gratitude
+        static let memory = Color(hex: "00CED1")     // Bright turquoise for memory
+        static let accomplishment = Color(hex: "FF6B6B")  // Bright coral for accomplishment
+        static let journal = Color(hex: "A78BFA")    // Keep the purple
+    }
+
+    struct Status {
+        static let success = Color(hex: "66BB6A")
+        static let warning = Color(hex: "FFB74D")
+        static let error = Color(hex: "EF5350")
     }
 }
 

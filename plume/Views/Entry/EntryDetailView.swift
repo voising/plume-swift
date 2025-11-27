@@ -24,10 +24,6 @@ struct EntryDetailView: View {
                     header
                 }
                 
-                if Calendar.current.isDateInToday(date) {
-                    quoteCard
-                }
-                
                 if let _ = entry {
                     journalCard
                     gratitudeCard

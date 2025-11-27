@@ -8,13 +8,13 @@ struct OnboardingView: View {
         let description: String
         let illustration: Illustration
     }
-    
+
     enum Illustration {
         case spark
         case prompts
         case calendar
     }
-    
+
     private let slides: [Slide] = [
         .init(
             title: "Welcome to Plume",
@@ -35,138 +35,207 @@ struct OnboardingView: View {
             illustration: .calendar
         )
     ]
-    
+
     @State private var currentIndex = 0
+    @State private var opacity: Double = 1.0
     var onFinish: () -> Void
-    
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
             AppColors.Background.mainLight
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
+                // Skip button
                 HStack {
                     Spacer()
                     Button("Skip") {
-                        onFinish()
+                        handleComplete()
                     }
                     .font(.callout.weight(.medium))
                     .foregroundStyle(AppColors.Text.secondary)
                 }
                 .padding(.top, 24)
                 .padding(.horizontal, 24)
-                
-                Spacer()
-                
-                illustrationView(for: slides[currentIndex].illustration)
-                    .padding(.bottom, 32)
-                
-                Text(slides[currentIndex].title)
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(AppColors.Text.primary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-                    .padding(.bottom, 8)
-                
-                Text(slides[currentIndex].subtitle)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(AppColors.primary)
-                    .padding(.bottom, 12)
-                
-                Text(slides[currentIndex].description)
-                    .font(.system(size: 16))
-                    .foregroundStyle(AppColors.Text.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-                
-                Spacer()
-                
-                HStack(spacing: 6) {
-                    ForEach(Array(slides.indices), id: \.self) { index in
-                        Capsule(style: .continuous)
-                            .fill(index == currentIndex ? AppColors.primary : AppColors.Border.subtle)
-                            .frame(width: index == currentIndex ? 32 : 8, height: 8)
-                            .animation(.easeInOut(duration: 0.25), value: currentIndex)
+
+                // TabView with swipeable slides
+                TabView(selection: $currentIndex) {
+                    ForEach(Array(slides.enumerated()), id: \.element.id) { index, slide in
+                        slideView(for: slide)
+                            .tag(index)
                     }
                 }
-                .padding(.bottom, 24)
-                
-                HStack(spacing: 16) {
-                    if currentIndex > 0 {
-                        Button("Back") {
-                            withAnimation {
-                                currentIndex -= 1
-                            }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .animation(.easeInOut, value: currentIndex)
+
+                // Navigation controls
+                VStack(spacing: 24) {
+                    // Dots indicator
+                    HStack(spacing: 6) {
+                        ForEach(Array(slides.indices), id: \.self) { index in
+                            Capsule(style: .continuous)
+                                .fill(index == currentIndex ? AppColors.primary : AppColors.Border.subtle)
+                                .frame(width: index == currentIndex ? 32 : 8, height: 8)
+                                .animation(.easeInOut(duration: 0.25), value: currentIndex)
+                                .onTapGesture {
+                                    withAnimation {
+                                        currentIndex = index
+                                    }
+                                }
                         }
-                        .font(.headline)
-                        .foregroundStyle(AppColors.Text.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                    } else {
-                        Spacer()
-                            .frame(maxWidth: .infinity)
                     }
-                    
-                    Button(action: advance) {
-                        Text(currentIndex == slides.count - 1 ? "Get Started" : "Next")
+
+                    // Back and Next buttons
+                    HStack(spacing: 16) {
+                        if currentIndex > 0 {
+                            Button("Back") {
+                                withAnimation {
+                                    currentIndex -= 1
+                                }
+                            }
                             .font(.headline)
-                            .foregroundStyle(.black.opacity(0.85))
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(AppColors.primary)
-                            .clipShape(Capsule())
+                            .foregroundStyle(AppColors.Text.secondary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                        }
+
+                        Spacer()
+
+                        Button(action: advance) {
+                            Text(currentIndex == slides.count - 1 ? "Get Started" : "Next")
+                                .font(.headline)
+                                .foregroundStyle(.black.opacity(0.85))
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 12)
+                                .background(AppColors.primary)
+                                .clipShape(Capsule())
+                        }
                     }
-                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 32)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 32)
             }
         }
+        .opacity(opacity)
     }
-    
+
+    private func handleComplete() {
+        withAnimation(.easeOut(duration: 0.3)) {
+            opacity = 0
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            onFinish()
+        }
+    }
+
     private func advance() {
         if currentIndex == slides.count - 1 {
-            onFinish()
+            handleComplete()
         } else {
             withAnimation {
                 currentIndex += 1
             }
         }
     }
-    
+
+    @ViewBuilder
+    private func slideView(for slide: Slide) -> some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            illustrationView(for: slide.illustration)
+                .frame(height: 200)
+                .padding(.bottom, 32)
+
+            Text(slide.title)
+                .font(.system(size: 32, weight: .bold))
+                .foregroundStyle(AppColors.Text.primary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+                .padding(.bottom, 8)
+
+            Text(slide.subtitle)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(AppColors.primary)
+                .padding(.bottom, 12)
+
+            Text(slide.description)
+                .font(.system(size: 16))
+                .lineSpacing(8)
+                .foregroundStyle(AppColors.Text.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+                .frame(maxWidth: 400)
+
+            Spacer()
+                .frame(height: 120) // Account for navigation height
+        }
+    }
+
     @ViewBuilder
     private func illustrationView(for illustration: Illustration) -> some View {
         switch illustration {
         case .spark:
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .fill(AppColors.Background.secondaryDark)
-                .frame(width: 140, height: 140)
+                .frame(width: 120, height: 120)
                 .overlay(
                     Image(systemName: "sparkles")
-                        .font(.system(size: 54, weight: .bold))
+                        .font(.system(size: 64, weight: .bold))
                         .foregroundStyle(AppColors.primary)
                 )
+                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
         case .prompts:
-            HStack(spacing: 24) {
-                VStack(spacing: 16) {
-                    onboardingIcon(systemName: "heart.fill")
-                    onboardingIcon(systemName: "sparkles")
-                }
-                onboardingIcon(systemName: "trophy.fill")
+            // Triangle arrangement matching React Native
+            ZStack {
+                // Top emoji
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(AppColors.Background.secondaryDark)
+                    .frame(width: 80, height: 80)
+                    .overlay(
+                        Image(systemName: "hands.sparkles.fill")
+                            .font(.system(size: 40))
+                            .foregroundStyle(AppColors.primary)
+                    )
+                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
+                    .offset(x: 0, y: -50)
+
+                // Bottom left emoji
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(AppColors.Background.secondaryDark)
+                    .frame(width: 80, height: 80)
+                    .overlay(
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 40))
+                            .foregroundStyle(AppColors.primary)
+                    )
+                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
+                    .offset(x: -50, y: 50)
+
+                // Bottom right emoji
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(AppColors.Background.secondaryDark)
+                    .frame(width: 80, height: 80)
+                    .overlay(
+                        Image(systemName: "trophy.fill")
+                            .font(.system(size: 40))
+                            .foregroundStyle(AppColors.primary)
+                    )
+                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
+                    .offset(x: 50, y: 50)
             }
-            .padding(24)
-            .background(AppColors.Background.secondaryDark)
-            .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+            .frame(width: 180, height: 180)
         case .calendar:
-            VStack(spacing: 12) {
-                let columns = 5
-                ForEach(0..<3, id: \.self) { row in
-                    HStack(spacing: 8) {
-                        ForEach(0..<columns, id: \.self) { column in
-                            let index = row * columns + column
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(index >= 10 && index <= 13 ? AppColors.primary : AppColors.Background.secondaryLight)
-                                .frame(width: 18, height: 18)
+            // 7 columns × 5 rows = 35 days matching React Native
+            VStack(spacing: 4) {
+                ForEach(0..<5, id: \.self) { row in
+                    HStack(spacing: 4) {
+                        ForEach(0..<7, id: \.self) { column in
+                            let index = row * 7 + column
+                            let highlightedIndices = [6, 12, 13, 19, 20, 26, 27]
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(highlightedIndices.contains(index) ? AppColors.primary : AppColors.Border.subtle)
+                                .frame(width: 24, height: 24)
                         }
                     }
                 }
@@ -175,17 +244,6 @@ struct OnboardingView: View {
             .background(AppColors.Background.secondaryDark)
             .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
         }
-    }
-    
-    private func onboardingIcon(systemName: String) -> some View {
-        RoundedRectangle(cornerRadius: 20, style: .continuous)
-            .fill(AppColors.Background.secondaryLight)
-            .frame(width: 70, height: 70)
-            .overlay(
-                Image(systemName: systemName)
-                    .font(.system(size: 28))
-                    .foregroundStyle(AppColors.primary)
-            )
     }
 }
 

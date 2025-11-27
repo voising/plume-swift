@@ -3,12 +3,18 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var journalService: JournalService
     @State private var selectedTab: Tab = .today
     @State private var showSettings = false
+    @State private var showSearch = false
     @State private var presentOnboarding = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-    
+
+    private var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+
     enum Tab: CaseIterable {
         case calendar
         case today
@@ -18,36 +24,30 @@ struct ContentView: View {
 
     var body: some View {
         #if os(macOS)
-        NavigationSplitView {
-            List(selection: $selectedTab) {
-                ForEach(Tab.allCases, id: \.self) { tab in
-                    NavigationLink(value: tab) {
-                        Label(tab.title, systemImage: tab.icon)
-                    }
-                }
-            }
-            .navigationTitle("Plume")
-        } detail: {
-            tabContent(for: selectedTab)
-                .toolbar {
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "gear")
-                    }
-                }
-        }
+        macOSView
         #else
+        iOSView
+        #endif
+    }
+
+    @ViewBuilder
+    private var iOSView: some View {
         ZStack {
             AppColors.Background.mainLight
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
+                // Header - always show on iOS
+                plumeHeader
+
+                // Tab Content
                 tabContent(for: selectedTab)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
-                PlumeTabBar(selectedTab: $selectedTab)
-                    .padding(.bottom, 12)
+
+                // Bottom Navigation - show on iPhone only
+                if !isIPad {
+                    PlumeTabBar(selectedTab: $selectedTab)
+                }
             }
         }
         .tint(AppColors.primary)
@@ -74,30 +74,173 @@ struct ContentView: View {
             }
             .presentationDetents([.medium, .large])
         }
-        #endif
+        .sheet(isPresented: $showSearch) {
+            NavigationStack {
+                ExploreView()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close") {
+                                showSearch = false
+                            }
+                        }
+                    }
+                    .navigationTitle("Search")
+            }
+        }
     }
-    
+
+    #if os(macOS)
+    @ViewBuilder
+    private var macOSView: some View {
+        NavigationSplitView {
+            List(selection: $selectedTab) {
+                ForEach(Tab.allCases, id: \.self) { tab in
+                    NavigationLink(value: tab) {
+                        Label(tab.title, systemImage: tab.icon)
+                    }
+                }
+            }
+            .navigationTitle("Plume")
+        } detail: {
+            tabContent(for: selectedTab)
+                .toolbar {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gear")
+                    }
+                }
+        }
+    }
+    #endif
+
+    // MARK: - Header matching React Native
+    private var plumeHeader: some View {
+        HStack(alignment: .center, spacing: 16) {
+            // Left: Title and subtitle
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Plume")
+                    .font(.system(size: isIPad ? 42 : 20, weight: .bold))
+                    .foregroundStyle(AppColors.Text.primary)
+                    .fontDesign(.serif)
+
+                if isIPad {
+                    Text("Reflect, grow, and track your journey")
+                        .font(.system(size: 18))
+                        .foregroundStyle(AppColors.Text.secondary)
+                }
+            }
+
+            Spacer()
+
+            // Right: Navigation grouped together
+            HStack(spacing: isIPad ? 16 : 8) {
+                // Settings button
+                HeaderButton(icon: "gearshape.fill") {
+                    showSettings = true
+                }
+
+                // iPad Tab Navigation
+                if isIPad {
+                    iPadTabNavigation
+                }
+
+                // Search button
+                HeaderButton(icon: "magnifyingglass") {
+                    showSearch = true
+                }
+            }
+        }
+        .padding(.horizontal, isIPad ? 24 : 12)
+        .padding(.vertical, isIPad ? 20 : 12)
+        .background(
+            AppColors.Background.mainLight.opacity(0.95)
+                .overlay(
+                    Rectangle()
+                        .fill(AppColors.Border.subtle.opacity(0.5))
+                        .frame(height: 1),
+                    alignment: .bottom
+                )
+        )
+    }
+
+    // iPad-specific tab navigation in header (like React Native)
+    private var iPadTabNavigation: some View {
+        HStack(spacing: 0) {
+            iPadTab(.calendar, label: "Calendar", icon: "calendar")
+            iPadTab(.today, label: "Today", icon: "circle.fill")
+            iPadTab(.explore, label: "Explore", icon: "safari.fill")
+        }
+        .background(AppColors.Background.secondaryDark)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(AppColors.Border.subtle, lineWidth: 1)
+        )
+    }
+
+    private func iPadTab(_ tab: Tab, label: String, icon: String) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                selectedTab = tab
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .medium))
+                Text(label)
+                    .font(.system(size: 16, weight: .medium))
+            }
+            .foregroundStyle(selectedTab == tab ? AppColors.Background.secondaryDark : AppColors.Text.secondary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(selectedTab == tab ? AppColors.primary : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
     @ViewBuilder
     private func tabContent(for tab: Tab) -> some View {
         switch tab {
         case .calendar:
-            NavigationStack {
-                CalendarView()
-            }
+            CalendarView()
         case .today:
-            TodayHeroView(date: Date(), showSettings: $showSettings)
+            TodayHeroView(date: Date())
                 .environmentObject(journalService)
         case .todos:
-            NavigationStack {
-                TodosView()
-                    .navigationTitle("Tasks")
-            }
+            TodosView()
         case .explore:
-            NavigationStack {
-                ExploreView()
-                    .navigationTitle("Explore")
-            }
+            ExploreView()
         }
+    }
+}
+
+// Header button matching React Native style
+private struct HeaderButton: View {
+    let icon: String
+    let action: () -> Void
+
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: isIPad ? 20 : 18, weight: .medium))
+                .foregroundStyle(AppColors.Text.primary)
+                .frame(width: isIPad ? 44 : 36, height: isIPad ? 44 : 36)
+                .background(AppColors.Background.secondaryDark)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(AppColors.Border.subtle, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
 
