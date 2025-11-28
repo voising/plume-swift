@@ -7,7 +7,7 @@ struct Quote {
 
 class QuoteService {
     static let shared = QuoteService()
-    
+
     private let quotes: [Quote] = [
         Quote(text: "The journey of a thousand miles begins with one step.", author: "Lao Tzu"),
         Quote(text: "What you do today can improve all your tomorrows.", author: "Ralph Marston"),
@@ -35,7 +35,20 @@ class QuoteService {
         Quote(text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein"),
         Quote(text: "What we think, we become.", author: "Buddha"),
     ]
-    
+
+    private let motivationalQuotes: [String] = [
+        "Every day is a new beginning.",
+        "Progress, not perfection.",
+        "Small steps lead to big changes.",
+        "Today's effort is tomorrow's strength.",
+        "Gratitude turns what we have into enough.",
+        "The best time to plant a tree was 20 years ago. The second best time is now.",
+        "You are exactly where you need to be.",
+        "Every moment is a fresh beginning.",
+        "Be present. Be grateful. Be kind.",
+        "Your journey is unique and beautiful.",
+    ]
+
     func dailyQuote() -> Quote {
         // Use date as seed for consistent quote per day
         let calendar = Calendar.current
@@ -44,8 +57,12 @@ class QuoteService {
         let index = daysSince1970 % quotes.count
         return quotes[index]
     }
-    
+
     func randomQuote() -> Quote {
         quotes.randomElement() ?? quotes[0]
+    }
+
+    func randomMotivationalQuote() -> String {
+        motivationalQuotes.randomElement() ?? motivationalQuotes[0]
     }
 }

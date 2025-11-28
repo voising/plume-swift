@@ -90,17 +90,7 @@ struct ContentView: View {
             .presentationDetents([.medium, .large])
         }
         .sheet(isPresented: $showSearch) {
-            NavigationStack {
-                ExploreView()
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Close") {
-                                showSearch = false
-                            }
-                        }
-                    }
-                    .navigationTitle("Search")
-            }
+            SearchView()
         }
     }
 
